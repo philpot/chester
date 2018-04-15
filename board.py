@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import sys
+
 FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 RANKS = range(1, 9)
 
@@ -130,6 +132,8 @@ class Rook(Piece):
             return False
         if r not in RANKS:
             return False
+        if self.f == f and self.r == r:
+            return False
         fv = fval(f)
         if self.r == r and self.f != f:
             # Move along file
@@ -168,6 +172,40 @@ class Bishop(Piece):
     chars = {"W": u'\u2657',
              "B": u'\u265D'}
 
+    def canmove(self, board, f, r):
+        up = self.up
+        start = self.start
+        if f not in FILES:
+            return False
+        if r not in RANKS:
+            return False
+        if self.f == f and self.r == r:
+            return False
+        fv = fval(f)
+        if abs(self.fv - fv) != abs(self.r - r):
+            return False
+        # Move along file and rank simultaneously
+        df = signum(fv - self.fv)
+        dr = signum(r - self.r)
+        rs = RANKS[self.r:r:dr]
+        fs = FILES[self.fv+df:fv+df:df]
+        print("Ranks {rs} files {fs}"
+              .format(rs=rs, fs=fs))
+        for (j, k) in zip(fs[:-1], rs[:-1]):
+            if board.bref(j, k):
+                return False
+        target = board.bref(f, r)
+        if target is None:
+            return True
+        else:
+            if target.color == self.color:
+                return False
+            else:
+                # capture
+                return target
+        return False
+
+
 class Knight(Piece):
     name = 'N'
     chars = {"W": u'\u2658',
@@ -179,6 +217,8 @@ class Knight(Piece):
         if f not in FILES:
             return False
         if r not in RANKS:
+            return False
+        if self.f == f and self.r == r:
             return False
         fv = fval(f)
         if (abs(self.r - r) == 2 and abs(self.fv - fv) == 1
@@ -212,6 +252,8 @@ class Pawn(Piece):
         if f not in FILES:
             return False
         if r not in RANKS:
+            return False
+        if self.f == f and self.r == r:
             return False
         fv = fval(f)
         # From starting rank: may move 1 or two ranks
@@ -374,6 +416,8 @@ def cmd(b, s, color='W'):
             cands.append((p, result))
     if len(cands) > 1:
         print("ambiguous")
+    elif len(cands) == 0:
+        print("No such legal move")
     else:
         (p, result) = cands[0]
         former = str(p)
